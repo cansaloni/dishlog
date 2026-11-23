@@ -5,9 +5,10 @@
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="14" fill="url(#g)"/>
-  <!-- piatto -->
-  <circle cx="32" cy="34" r="16" fill="none" stroke="#e8843c" stroke-width="4.5"/>
-  <circle cx="32" cy="34" r="6" fill="#e8843c"/>
+  <!-- piatto di profilo: coperchio a cupola sopra una base piatta -->
+  <path d="M12 44a20 20 0 0 1 40 0z" fill="none" stroke="#e8843c" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M8 46h48" stroke="#e8843c" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="32" cy="22" r="2.6" fill="#e8843c"/>
   <!-- spunta -->
-  <path d="M20 14l4 4 8-8" fill="none" stroke="#3ddc97" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M46 14l3 3 6-6" fill="none" stroke="#3ddc97" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

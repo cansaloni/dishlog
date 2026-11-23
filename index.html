@@ -159,10 +159,26 @@
   .toast.on{opacity:1; transform:translate(-50%,0)}
   .toast.act{pointer-events:auto}
   .toast button{margin-left:10px; background:#1f1610; color:#f6efe9; border:0; border-radius:99px; padding:3px 10px; cursor:pointer; font-size:12.5px}
+  /* ---- sfondo a tessere calde ---- */
+  #collage{position:fixed; inset:-12% -8%; z-index:0; pointer-events:none;
+           display:grid; grid-template-columns:repeat(10,1fr); gap:10px; align-content:start;
+           transform:rotate(-7deg); opacity:0; transition:opacity 1.4s ease}
+  #collage.on{opacity:1}
+  #collage .tile{width:100%; aspect-ratio:2/3; border-radius:8px; filter:saturate(.8) brightness(.7)}
+  #collage .tile:nth-child(odd){transform:translateY(40%)}
+  #velo{position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(22,18,15,.45) 0%, rgba(22,18,15,.84) 45%, var(--bg) 100%)}
+  body.dentro #velo{background:rgba(22,18,15,.8)}
+  body.dentro #collage .tile{filter:saturate(.6) brightness(.5)}
+  @media (max-width:640px){ #collage{grid-template-columns:repeat(5,1fr); gap:7px} }
+  #benvenuto,#tabBar,#ordMobWrap,main,footer{position:relative; z-index:1}
   .res{margin-top:10px; display:flex; flex-direction:column; gap:6px}
 </style>
 </head>
 <body>
+
+<div id="collage" aria-hidden="true"></div>
+<div id="velo" aria-hidden="true"></div>
 
 <header>
   <div class="hrow">
@@ -232,7 +248,7 @@
 
 <footer style="padding:4px 14px 70px; color:#978474; font-size:11.5px; line-height:1.6">
   Segnalazioni e suggerimenti: <span class="posta"></span>
-  · <span title="Serve a capire se un dispositivo sta usando una versione vecchia">versione del 23 novembre 2026 · a</span>
+  · <span title="Serve a capire se un dispositivo sta usando una versione vecchia">versione del 23 novembre 2026 · b</span>
 </footer>
 
 <div class="ov" id="ovAdd">
@@ -655,6 +671,21 @@ function removeDish(s){
   toast._h=setTimeout(function(){ t.className="toast" },7000);
 }
 
+function tessere(){
+  var h="", pal=["#7a3412","#a4521c","#5c2410","#c97a2e","#8a3a1e","#e0a050","#3a1a10","#b5652a","#6e3018","#d18a3c"];
+  for(var i=0;i<40;i++){
+    var c1=pal[Math.floor(Math.random()*pal.length)], c2=pal[Math.floor(Math.random()*pal.length)];
+    h+='<div class="tile" style="background:linear-gradient('+(120+Math.floor(Math.random()*120))+'deg,'+c1+','+c2+')"></div>';
+  }
+  return h;
+}
+function collage(){
+  if(collage._fatto) return; collage._fatto=true;
+  var box=document.getElementById("collage");
+  box.innerHTML=tessere();
+  requestAnimationFrame(function(){ box.classList.add("on") });
+}
+
 /* ============ navigazione mobile ============ */
 document.getElementById("tabBar").addEventListener("click",function(e){
   var b=e.target.closest("[data-tab]"); if(!b) return;
@@ -911,7 +942,7 @@ try{
   if(perCol) COLS.forEach(function(t){ if(valid.indexOf(perCol[t])>-1) ordine[t]=perCol[t] });
 }catch(e){}
 function avvio(){
-  render(); accUI();
+  collage(); render(); accUI();
   if(!connesso()) return;
   COLS.forEach(function(t){ document.getElementById("c-"+t).querySelector(".clist").innerHTML='<div class="empty">Lettura dal server…</div>' });
   ricarica().catch(function(){
