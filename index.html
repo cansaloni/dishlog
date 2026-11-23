@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dishlog — i miei piatti</title>
+<meta name="theme-color" content="#16120f">
+<link rel="icon" href="favicon.svg?v=1" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest?v=1">
+<style>
+  :root{
+    --bg:#16120f; --panel:#211b17; --panel2:#2b231e; --line:#41332b;
+    --txt:#f6efe9; --dim:#b9a596; --acc:#e8843c; --ok:#3ddc97; --warn:#ffb95e;
+    --plan:#b98cff; --epic:#ffd84d; --r:14px;
+  }
+  :root{color-scheme:dark}
+  select option{background:var(--panel2); color:var(--txt)}
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg); color:var(--txt);
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent}
+  header{position:sticky; top:0; z-index:30; background:rgba(22,18,15,.96);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--line); padding:10px 14px}
+  .hrow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  h1{font-size:17px; margin:0; font-weight:650; letter-spacing:-.2px; white-space:nowrap}
+  .stats{color:var(--dim); font-size:12.5px; margin-left:auto}
+  #avvisoLoc{background:rgba(255,138,76,.13); border:1px solid rgba(255,138,76,.45);
+    color:#ff8a4c; font-size:12px; padding:4px 10px; border-radius:99px; cursor:pointer; white-space:nowrap}
+  input,select,textarea,button{font:inherit; color:inherit}
+  .fld{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:8px 11px; outline:none; min-width:0}
+  .fld:focus{border-color:var(--acc)}
+  #q{flex:1 1 170px}
+  .btn{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; cursor:pointer; white-space:nowrap}
+  .btn:hover{background:#3a2e27}
+  .btn.p{background:var(--acc); border-color:var(--acc); color:#2b1406; font-weight:600}
+  .btn.p:hover{filter:brightness(1.08)}
+  .btn.sm{padding:4px 9px; font-size:12.5px; border-radius:8px}
+  .btn.gh{background:transparent}
+  .tools{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; align-items:center}
+  .tools .sp{margin-left:auto}
+
+  main{padding:14px; display:grid; gap:14px; align-items:start; grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  @media (min-width:900px){ main{grid-template-columns:1fr 1fr} }
+  #benvenuto{padding:26px 16px 10px; min-height:70vh}
+  .bw{max-width:760px; margin:0 auto}
+  .bw h2{font-size:25px; margin:0 0 10px; letter-spacing:-.4px}
+  .occhiello{color:var(--dim); font-size:15px; margin:0 0 22px; line-height:1.55}
+  .bgrid{display:grid; gap:12px; grid-template-columns:repeat(3,1fr)}
+  @media (max-width:800px){ .bgrid{grid-template-columns:1fr} }
+  .bgrid>div{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:13px 15px; font-size:13.4px; color:var(--dim); line-height:1.5}
+  .bgrid b{display:block; color:var(--txt); font-size:14px; margin-bottom:5px}
+  .bact{display:flex; gap:10px; margin:22px 0 0; flex-wrap:wrap}
+  .bpriv{color:#978474; font-size:12.3px; line-height:1.6; margin:20px 0 0; border-top:1px solid var(--line); padding-top:14px}
+
+  #tabBar{display:none}
+  #ordMobWrap{display:none}
+  .sec2{display:none}
+  @media (max-width:640px), (max-height:520px) and (orientation:landscape){
+    main{grid-template-columns:1fr; padding:10px}
+    header{padding:8px 10px}
+    .sec2{display:inline-block}
+    .tools .sec{display:none}
+    .tools.aperta .sec{display:inline-block}
+    .tools.aperta{padding-bottom:2px}
+    #q{flex:1 1 100%; min-width:100%}
+    #fvoto{flex:1 1 45%; max-width:none}
+    #bAdd{order:1} .sec2{order:2} #q{order:3} #fvoto{order:4}
+    .tools .sp{display:none}
+    .tools .sec{order:6}
+    #tabBar{display:flex; gap:6px; padding:8px 10px 0; overflow-x:auto}
+    #tabBar button{flex:1 0 auto; background:var(--panel); border:1px solid var(--line); color:var(--dim);
+      border-radius:10px; padding:8px 10px; font-size:12.5px; cursor:pointer; white-space:nowrap;
+      display:flex; align-items:center; gap:5px; justify-content:center}
+    #tabBar button.on{background:var(--panel2); color:var(--txt); border-color:#5c4538; font-weight:600}
+    #ordMobWrap{display:block; padding:6px 10px 0}
+    #ordMob{display:block; width:100%; background:var(--panel); color:var(--dim); border:1px solid var(--line); border-radius:10px; padding:7px 10px; font-size:12.5px}
+    #tabBar .pal{width:7px; height:7px; border-radius:50%; flex:none}
+    main>section.col{display:none}
+    main>section.col.attiva{display:block}
+    header{transition:transform .22s ease}
+    body.giu header{transform:translateY(-100%)}
+    #tabBar{position:sticky; top:0; z-index:25; padding-bottom:8px; background:rgba(22,18,15,.96); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+    main>section.col .chd{display:none}
+    main>section.col .clist{display:flex !important}
+  }
+  section.col{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
+  .chd{display:flex; align-items:center; gap:8px; padding:11px 13px; border-bottom:1px solid var(--line); cursor:pointer; user-select:none}
+  .dot{width:9px; height:9px; border-radius:50%; flex:none}
+  .chd b{font-size:13.5px; font-weight:650; letter-spacing:.2px; text-transform:uppercase}
+  .cnt{margin-left:8px; color:var(--dim); font-size:12.5px; font-variant-numeric:tabular-nums}
+  .chd select.ordcol{margin-left:auto; max-width:48%; background:var(--panel); color:var(--dim); border:1px solid var(--line); border-radius:7px; padding:2px 5px; font-size:11.5px; cursor:pointer}
+  .caret{color:var(--dim); font-size:11px; transition:transform .15s}
+  section.col.closed .caret{transform:rotate(-90deg)}
+  section.col.closed .clist{display:none}
+  .clist{padding:9px; display:flex; flex-direction:column; gap:8px; min-height:44px}
+  .empty{color:var(--dim); font-size:13px; padding:10px 6px; text-align:center}
+
+  .card{background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--line); border-radius:11px; padding:9px 9px 9px 8px; position:relative}
+  .card.st-eaten{background:linear-gradient(90deg,rgba(232,132,60,.10),rgba(232,132,60,0) 190px); border-color:rgba(232,132,60,.28); border-left-color:var(--acc)}
+  .card.st-plan{background:linear-gradient(90deg,rgba(185,140,255,.10),rgba(185,140,255,0) 190px); border-color:rgba(185,140,255,.26); border-left-color:var(--plan)}
+  .card.epic{border-color:var(--epic); box-shadow:0 0 14px rgba(255,216,77,.16)}
+  .top{display:flex; gap:10px}
+  .del{position:absolute; top:4px; right:4px; width:22px; height:22px; padding:0; line-height:1; border:0; background:transparent; color:#8a7767; cursor:pointer; border-radius:6px; font-size:13px; opacity:.55}
+  .del:hover{background:#4a2020; color:#ff9b9b; opacity:1}
+  .pos{width:60px; height:60px; border-radius:8px; flex:none; background:#3a2e27; object-fit:cover; display:block}
+  .ph{display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:22px}
+  img.pos{object-fit:cover}
+  .body{flex:1; min-width:0}
+  .art{color:var(--dim); font-size:12.5px; font-weight:500; padding-right:20px; overflow-wrap:anywhere}
+  .ttl{font-weight:600; font-size:14.2px; line-height:1.25; overflow-wrap:anywhere; padding-right:20px}
+  .meta{color:var(--dim); font-size:12.3px; margin-top:3px; font-variant-numeric:tabular-nums}
+  .acts{display:flex; gap:4px; margin-top:7px; flex-wrap:wrap}
+  .acts .btn.sm{padding:4px 7px}
+  .info{padding:4px 7px; font-size:12.5px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--dim); text-decoration:none; white-space:nowrap}
+  .note{color:var(--warn); font-size:12.3px; margin-top:5px; font-style:italic; overflow-wrap:anywhere}
+  .rate{display:inline-flex; flex-direction:row-reverse; vertical-align:-1px; white-space:nowrap}
+  .rate b{color:var(--warn); font-weight:400; font-size:13px; line-height:1; cursor:pointer; padding:0 1px}
+  .rate b.off{opacity:.22}
+  .rate b:hover, .rate b:hover ~ b{opacity:1}
+  .rate b.plus{font-size:12.5px; font-weight:700; padding-left:2px}
+  .rate.epic b{color:var(--epic); text-shadow:0 0 7px rgba(255,216,77,.45)}
+  .media{color:var(--dim); font-size:11.5px; margin-left:6px}
+  .media button{background:transparent; border:1px solid var(--line); color:var(--acc); border-radius:6px; font-size:11px; padding:1px 6px; cursor:pointer; margin-left:3px}
+
+  .pasti{margin-top:9px; border-top:1px solid var(--line); padding-top:6px}
+  .prow{display:flex; align-items:center; gap:8px; padding:4px 3px; border-radius:7px; font-size:12.8px; flex-wrap:wrap}
+  .prow:hover{background:#3a2e27}
+  .prow .bd{color:var(--dim); font-variant-numeric:tabular-nums; flex:none}
+  .prow .bo{flex:1; min-width:120px}
+  .prow .bn{color:var(--warn); font-style:italic; flex-basis:100%; font-size:12.2px; padding-left:2px}
+  .prow .pf{width:44px; height:44px; border-radius:6px; object-fit:cover; flex:none}
+  .prow .del{position:static; width:20px; height:20px}
+  .nostruct{color:var(--dim); font-size:12.3px; padding:4px 2px}
+  .form{margin-top:9px; border-top:1px solid var(--line); padding-top:6px}
+  .form label, .det label{display:block; font-size:11.3px; color:var(--dim); margin:7px 0 3px}
+  .form .fld, .det .fld{width:100%; padding:6px 9px; font-size:13px; border-radius:8px}
+  .det textarea.fld, .form textarea.fld{resize:vertical}
+  .form .two, .det .two{display:flex; gap:7px}
+  .form .two>div, .det .two>div{flex:1; min-width:0}
+  .form .mact{margin-top:10px}
+  .det{margin-top:9px; border-top:1px solid var(--line); padding-top:6px}
+  .fin{color:#978474; font-size:11.3px; margin-top:7px}
+  .fotoIl{color:var(--dim); font-size:12px; margin-top:6px}
+
+  .ov{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:60; padding:16px; overflow:auto}
+  .ov.on{display:block}
+  .modal{background:var(--panel); border:1px solid var(--line); border-radius:16px; max-width:520px; margin:6vh auto; padding:16px}
+  .modal h2{margin:0 0 12px; font-size:16px; overflow-wrap:anywhere}
+  .modal label{display:block; font-size:12.5px; color:var(--dim); margin:10px 0 4px}
+  .modal .fld{width:100%}
+  .rowf{display:flex; gap:8px}
+  .rowf>div{flex:1; min-width:0}
+  .mact{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap}
+  .mact .sp{margin-left:auto}
+  .hint{color:var(--dim); font-size:12.3px; margin-top:8px}
+  .toast{position:fixed; left:50%; bottom:20px; transform:translate(-50%,14px); opacity:0; background:#f6efe9; color:#1f1610; padding:9px 15px; border-radius:99px; font-size:13.5px; font-weight:600; z-index:90; pointer-events:none; transition:.2s; max-width:80vw; text-align:center}
+  .toast.on{opacity:1; transform:translate(-50%,0)}
+  .toast.act{pointer-events:auto}
+  .toast button{margin-left:10px; background:#1f1610; color:#f6efe9; border:0; border-radius:99px; padding:3px 10px; cursor:pointer; font-size:12.5px}
+  .res{margin-top:10px; display:flex; flex-direction:column; gap:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <h1>🍽 I miei piatti</h1>
+    <div class="stats" id="stats"></div>
+    <button id="avvisoLoc" hidden title="Premi per riprovare">⚠ Server non raggiungibile · l'ultima modifica non è stata salvata</button>
+  </div>
+  <div class="tools">
+    <button class="btn p" id="bAdd">+ Aggiungi piatto</button>
+    <input id="q" class="fld" placeholder="Filtra: piatto, luogo, persone, categoria…" autocomplete="off">
+    <select id="fvoto" class="fld" style="flex:none" title="Filtra per voto">
+      <option value="">Tutti i voti</option>
+      <option value="6">★★★★★+ epici</option>
+      <option value="5">★★★★★ e più</option>
+      <option value="4">★★★★ e più</option>
+      <option value="3">★★★ e più</option>
+      <option value="0">Senza voto</option>
+    </select>
+    <span class="sp"></span>
+    <button class="btn sec2" id="bMenu" title="Altre funzioni">☰ Funzioni</button>
+    <button class="btn sec" id="bExp" title="Salva un backup .json">⬇ Backup</button>
+    <button class="btn sec" id="bImp" title="Ripristina o unisci un backup">⬆ Ripristina</button>
+    <button class="btn sec" id="bAcc" title="Account">☁ Accedi</button>
+    <input type="file" id="fImp" accept=".json,application/json" hidden>
+  </div>
+</header>
+
+<section id="benvenuto" hidden>
+  <div class="bw">
+    <h2>Ricorda i piatti che hai mangiato</h2>
+    <p class="occhiello">
+      dishlog tiene il conto dei piatti che vuoi provare e di quelli che hai già mangiato:
+      dove, quando, con chi, con una foto e un voto. Niente consigli, niente classifiche: solo i tuoi piatti.
+    </p>
+    <div class="bgrid">
+      <div><b>Due colonne</b>
+        Da provare e mangiati. Ogni piatto può avere più occasioni: la stessa carbonara in due ristoranti diversi.</div>
+      <div><b>Dove, quando, con chi</b>
+        Per ogni volta scrivi il luogo, la data e le persone. I nomi che usi ti vengono suggeriti.</div>
+      <div><b>Una foto per ricordo</b>
+        Scatti la foto al piatto e la ritrovi sulla scheda. Lo stesso account di tvlog, musiclog, booklog e winelog.</div>
+    </div>
+    <div class="bact">
+      <button class="btn p" id="bStart">Crea un account o accedi</button>
+    </div>
+    <p class="bpriv">
+      Cosa conserviamo: la tua email, per farti entrare, e l'elenco dei piatti che segni.
+      Nient'altro — nessun tracciamento, nessuna cessione a terzi. Ognuno vede solo i propri dati.
+      Puoi cancellare tutto in qualsiasi momento dalla finestra dell'account.
+    </p>
+  </div>
+</section>
+
+<nav id="tabBar" hidden></nav>
+<div id="ordMobWrap" hidden></div>
+
+<main>
+  <section class="col" id="c-plan">
+    <div class="chd" data-t="plan"><span class="dot" style="background:var(--plan)"></span><b>Da provare</b><span class="cnt"></span><span class="caret">▾</span></div>
+    <div class="clist"></div>
+  </section>
+  <section class="col" id="c-eaten">
+    <div class="chd" data-t="eaten"><span class="dot" style="background:var(--acc)"></span><b>Mangiati</b><span class="cnt"></span><span class="caret">▾</span></div>
+    <div class="clist"></div>
+  </section>
+</main>
+
+<footer style="padding:4px 14px 70px; color:#978474; font-size:11.5px; line-height:1.6">
+  Segnalazioni e suggerimenti: <span class="posta"></span>
+  · <span title="Serve a capire se un dispositivo sta usando una versione vecchia">versione del 23 novembre 2026 · a</span>
+</footer>
+
+<div class="ov" id="ovAdd">
+  <div class="modal">
+    <h2>Aggiungi un piatto</h2>
+    <label>Nome del piatto *</label>
+    <input id="aName" class="fld" placeholder="Es. Carbonara, cacio e pepe, fritto misto…" autocomplete="off">
+    <label>Categoria</label>
+    <input id="aCat" class="fld" list="dlCat" placeholder="Primo, secondo, pizza, dolce…" autocomplete="off">
+    <label>Note</label>
+    <textarea id="aNote" class="fld" rows="2" placeholder="Chi te l'ha consigliato, cosa ti incuriosisce…"></textarea>
+    <div class="mact">
+      <span class="sp"></span>
+      <button class="btn gh" id="bCancel">Chiudi</button>
+      <button class="btn p" id="bSave">Aggiungi</button>
+    </div>
+  </div>
+</div>
+<datalist id="dlCat"></datalist>
+<datalist id="dlLuogo"></datalist>
+<datalist id="dlPersone"></datalist>
+
+<div class="ov" id="ovAcc">
+  <div class="modal">
+    <h2>Account</h2>
+    <div id="accOff">
+      <div class="hint" style="margin-bottom:10px">
+        I piatti stanno sul server, legati al tuo account: serve per entrare, e li ritrovi uguali da qualsiasi dispositivo.
+        È lo stesso account di tvlog, musiclog, booklog e winelog: se ce l'hai, usa quello.
+      </div>
+      <label>Email</label>
+      <input id="accMail" class="fld" type="email" autocomplete="username" placeholder="tu@esempio.it">
+      <label>Password</label>
+      <input id="accPass" class="fld" type="password" autocomplete="current-password" placeholder="almeno 8 caratteri">
+      <div class="mact">
+        <button class="btn" id="bReg">Crea l'account</button>
+        <span class="sp"></span>
+        <button class="btn gh" id="accClose1">Chiudi</button>
+        <button class="btn p" id="bLogin">Accedi</button>
+      </div>
+    </div>
+    <div id="accOn" hidden>
+      <div class="hint" id="accWho" style="margin-bottom:10px"></div>
+      <div class="res" id="accLog"></div>
+      <div class="mact">
+        <button class="btn" id="bLogout">Esci</button>
+        <span class="sp"></span>
+        <button class="btn gh" id="accClose2">Chiudi</button>
+        <button class="btn p" id="bSync">⟳ Rileggi dal server</button>
+      </div>
+      <div class="hint" style="border-top:1px solid var(--line); margin-top:14px; padding-top:12px">
+        <b style="color:var(--txt)">Cancellare i tuoi dati</b><br>
+        Rimuove dal server tutti i piatti del tuo account (gli altri siti non c'entrano).
+        Non esiste un'altra copia: scaricati un backup prima di procedere, se vuoi poterli ritrovare.
+        <div class="mact"><span class="sp"></span>
+          <button class="btn" id="bWipe" style="border-color:#5a2a2a">Elimina tutti i miei piatti</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fFoto" accept="image/*" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var KEY="dishlog-v1";
+var db={dishes:[]};
+
+/* ============ utilità ============ */
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7) }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c] }) }
+function toast(m){ var t=document.getElementById("toast"); t.className="toast on"; t.textContent=m;
+  clearTimeout(toast._h); toast._h=setTimeout(function(){t.classList.remove("on")},2000) }
+function oggi(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0") }
+function dataIt(d){ if(!d) return ""; var p=d.split("-"); return p.length===3?(+p[2])+"/"+(+p[1])+"/"+p[0]:d }
+function find(id){ for(var i=0;i<db.dishes.length;i++) if(db.dishes[i].id===id) return db.dishes[i] }
+function tocca(s,utente){ if(utente) s.updated=Date.now(); scrivi(s) }
+function lsGet(k){ try{ return localStorage.getItem(KEY+":"+k) }catch(e){ return null } }
+function lsSet(k,v){ try{ localStorage.setItem(KEY+":"+k,v) }catch(e){} }
+
+/* ============ modello ============
+   piatto = { name, cat, note, rating (voto del piatto), img (foto di copertina),
+              pasti:[{id,d,luogo,persone,rating,note,img}] }
+   status: "plan" (nessun pasto) | "eaten" (almeno un pasto)
+=================================== */
+var COLS=["plan","eaten"];
+var NOMI={plan:"Da provare",eaten:"Mangiati"};
+var TINTA={plan:"var(--plan)",eaten:"var(--acc)"};
+var ORDINI=[["recent","Modifiche"],["added","Data di aggiunta"],["lastDate","Ultima volta"],["times","Più volte"],
+            ["rating","Voto"],["name","Nome A→Z"],["cat","Categoria"]];
+var ordine={plan:"recent",eaten:"recent"};
+var tabAttiva="eaten";
+var pendingImg={};   // foto scattata nel modulo pasto, prima di salvare il pasto
+var votoNuova={};    // voto scelto nel modulo pasto, per piatto
+
+function statusOf(s){ return s.pasti.length ? "eaten" : "plan" }
+function ultimoPasto(s){ return s.pasti.reduce(function(a,p){ return (!a||p.d>a.d)?p:a },null) }
+function copertina(s){ return s.img || (ultimoPasto(s)||{}).img || "" }
+function mediaPasti(s){
+  var v=s.pasti.filter(function(p){ return p.rating }); if(!v.length) return null;
+  return { n:v.length, m:v.reduce(function(a,p){ return a+Math.min(p.rating,5) },0)/v.length };
+}
+function menuOrdine(col,cls,id){
+  return '<select class="'+cls+'" data-col="'+col+'"'+(id?' id="'+id+'"':'')+' title="Ordinamento di questa colonna">'+
+    ORDINI.map(function(o){ return '<option value="'+o[0]+'"'+(ordine[col]===o[0]?' selected':'')+'>'+o[1]+'</option>' }).join("")+
+    '</select>';
+}
+function migrate(s){
+  var o={ id:s.id||uid(), name:String(s.name||"senza nome"), cat:String(s.cat||""), note:String(s.note||""),
+    rating:parseInt(s.rating,10)||0, img:s.img||"",
+    pasti:Array.isArray(s.pasti)?s.pasti.filter(function(p){ return p && p.d }).map(function(p){
+      return {id:p.id||uid(), d:String(p.d).slice(0,10), luogo:String(p.luogo||""), persone:String(p.persone||""),
+              rating:parseInt(p.rating,10)||0, note:String(p.note||""), img:p.img||""} }):[],
+    added:s.added||Date.now(), updated:s.updated||Date.now(), openDet:false, openPasti:false, openForm:false };
+  o.pasti.sort(function(a,b){ return b.d.localeCompare(a.d) });
+  return o;
+}
+
+/* suggerimenti: tutto ciò che hai già scritto */
+function aggiornaDatalist(){
+  function riempi(id,vals){
+    var seen={}, h="";
+    vals.forEach(function(v){ v=String(v||"").trim(); if(v && !seen[v.toLowerCase()]){ seen[v.toLowerCase()]=1; h+='<option value="'+esc(v)+'">' } });
+    document.getElementById(id).innerHTML=h;
+  }
+  var V=db.dishes, luoghi=[], persone=[];
+  V.forEach(function(s){ s.pasti.forEach(function(p){ luoghi.push(p.luogo); String(p.persone||"").split(",").forEach(function(n){ persone.push(n.trim()) }) }) });
+  riempi("dlCat",V.map(function(s){ return s.cat }).concat(["Antipasto","Primo","Secondo","Contorno","Pizza","Dolce","Street food","Colazione"]));
+  riempi("dlLuogo",luoghi);
+  riempi("dlPersone",persone);
+}
+
+/* ============ render ============ */
+function render(){
+  var y=window.scrollY;
+  var q=document.getElementById("q").value.trim().toLowerCase();
+  var vf=document.getElementById("fvoto").value;
+  var filtra=!!(q||vf);
+  function passa(s){
+    if(q){
+      var testo=[s.name,s.cat,s.note].concat(s.pasti.map(function(p){ return [p.luogo,p.persone,p.note].join(" ") })).join(" · ").toLowerCase();
+      if(testo.indexOf(q)<0) return false;
+    }
+    if(vf==="0") return !(s.rating||0);
+    if(vf) return (s.rating||0)>=Number(vf);
+    return true;
+  }
+  var g={}; COLS.forEach(function(t){ g[t]=[] });
+  db.dishes.forEach(function(s){ g[statusOf(s)].push(s) });
+
+  var CMP={
+    recent:function(a,b){ return (b.updated||0)-(a.updated||0) },
+    added:function(a,b){ return (b.added||0)-(a.added||0) },
+    lastDate:function(a,b){ return String((ultimoPasto(b)||{}).d||"").localeCompare(String((ultimoPasto(a)||{}).d||"")) || a.name.localeCompare(b.name,"it") },
+    times:function(a,b){ return b.pasti.length-a.pasti.length || a.name.localeCompare(b.name,"it") },
+    rating:function(a,b){ return (b.rating||0)-(a.rating||0) || a.name.localeCompare(b.name,"it") },
+    name:function(a,b){ return a.name.localeCompare(b.name,"it") },
+    cat:function(a,b){ return a.cat.localeCompare(b.cat,"it") || a.name.localeCompare(b.name,"it") }
+  };
+
+  var conta={};
+  COLS.forEach(function(t){
+    var list=g[t].slice().sort(CMP[ordine[t]]||CMP.recent);
+    var shown=filtra?list.filter(passa):list;
+    conta[t]=filtra?shown.length+"/"+list.length:String(list.length);
+    var sec=document.getElementById("c-"+t);
+    sec.classList.toggle("attiva",t===tabAttiva);
+    sec.querySelector(".cnt").textContent=conta[t];
+    var vecchio=sec.querySelector("select.ordcol"); if(vecchio) vecchio.remove();
+    sec.querySelector(".cnt").insertAdjacentHTML("beforebegin",menuOrdine(t,"ordcol"));
+    sec.querySelector(".clist").innerHTML=shown.length
+      ? shown.map(card).join("")
+      : '<div class="empty">'+(filtra?"Nessun risultato":"Niente qui")+'</div>';
+  });
+  document.getElementById("tabBar").innerHTML=COLS.map(function(t){
+    return '<button data-tab="'+t+'" class="'+(t===tabAttiva?"on":"")+'">'+
+      '<span class="pal" style="background:'+TINTA[t]+'"></span>'+NOMI[t]+' <span style="opacity:.6">'+conta[t]+'</span></button>';
+  }).join("");
+  document.getElementById("ordMobWrap").innerHTML=menuOrdine(tabAttiva,"ordcol","ordMob");
+
+  var V=db.dishes, occ=V.reduce(function(a,s){ return a+s.pasti.length },0),
+      epici=V.filter(function(s){ return s.rating>=6 }).length;
+  document.getElementById("stats").textContent = V.length
+    ? V.length+(V.length===1?" piatto":" piatti")+" · "+occ+(occ===1?" pasto":" pasti")+(epici?" · "+epici+" epici":"")
+    : "";
+  aggiornaDatalist();
+  avvisoRete();
+  vetrina();
+  window.scrollTo(0,y);
+}
+function avvisoRete(){
+  document.getElementById("avvisoLoc").hidden=!reteKO;
+}
+function vetrina(){
+  var vuoto=!connesso();
+  document.getElementById("benvenuto").hidden=!vuoto;
+  document.querySelector("main").hidden=vuoto;
+  document.getElementById("tabBar").hidden=vuoto;
+  document.getElementById("ordMobWrap").hidden=vuoto;
+  document.querySelector(".tools").style.display=vuoto?"none":"";
+}
+
+function rateHtml(id,v,extra){
+  var h='<span class="rate'+(v>=6?" epic":"")+'" title="Voto">';
+  h+='<b class="plus'+(v>=6?"":" off")+'" data-a="rate" data-i="'+id+'" '+(extra||"")+' data-v="6" title="Epico">+</b>';
+  for(var i=5;i>=1;i--) h+='<b class="'+(v>=i?"":"off")+'" data-a="rate" data-i="'+id+'" '+(extra||"")+' data-v="'+i+'">★</b>';
+  return h+'</span>';
+}
+function pastiHtml(s){
+  var h='<div class="pasti">';
+  if(!s.pasti.length) h+='<div class="nostruct">Nessun pasto segnato.</div>';
+  s.pasti.forEach(function(p){
+    h+='<div class="prow">'+
+       (p.img?'<img class="pf" src="'+esc(p.img)+'" alt="" loading="lazy">':'')+
+       '<span class="bd">'+dataIt(p.d)+'</span>'+
+       '<span class="bo">'+esc(p.luogo||"")+(p.luogo&&p.persone?" · ":"")+(p.persone?'<i>con '+esc(p.persone)+'</i>':'')+'</span>'+
+       rateHtml(s.id,p.rating,'data-p="'+p.id+'"')+
+       '<button class="del" data-a="delpasto" data-i="'+s.id+'" data-p="'+p.id+'" title="Togli questo pasto">✕</button>'+
+       (p.note?'<span class="bn">'+esc(p.note)+'</span>':'')+'</div>';
+  });
+  return h+'</div>';
+}
+function formPastoHtml(s){
+  var foto=pendingImg[s.id]?'<div class="fotoIl">📷 Foto pronta: verrà salvata con questo pasto.</div>':'';
+  return '<div class="form" data-form="'+s.id+'">'+
+    '<div class="two"><div><label>Quando</label><input class="fld" type="date" data-bf="d" value="'+oggi()+'"></div>'+
+    '<div><label>Dove</label><input class="fld" data-bf="luogo" list="dlLuogo" placeholder="Ristorante, casa, città…" autocomplete="off"></div></div>'+
+    '<div class="two"><div><label>Con chi</label><input class="fld" data-bf="persone" list="dlPersone" placeholder="Anna, Marco…" autocomplete="off"></div>'+
+    '<div><label>Voto</label><div style="padding-top:6px">'+rateHtml(s.id,0,'data-nuova="1"')+'</div></div></div>'+
+    '<label>Note</label><textarea class="fld" rows="2" data-bf="note" placeholder="Com\'era, cosa ti è piaciuto…"></textarea>'+
+    foto+
+    '<div class="mact"><button class="btn sm" data-a="foto" data-i="'+s.id+'" data-ctx="pasto" title="Scatta o scegli la foto del piatto">📷 Foto</button><span class="sp"></span>'+
+    '<button class="btn gh" data-a="annullapasto" data-i="'+s.id+'">Annulla</button>'+
+    '<button class="btn p" data-a="salvapasto" data-i="'+s.id+'">Segna il pasto</button></div></div>';
+}
+function detailHtml(s){
+  return '<div class="det">'+
+    '<div class="two"><div><label>Nome del piatto</label><input class="fld" data-f="name" data-i="'+s.id+'" value="'+esc(s.name)+'"></div>'+
+    '<div><label>Categoria</label><input class="fld" data-f="cat" data-i="'+s.id+'" list="dlCat" value="'+esc(s.cat)+'"></div></div>'+
+    '<label>Nota</label><textarea class="fld" rows="2" data-f="note" data-i="'+s.id+'" placeholder="Chi te l\'ha consigliato, dove l\'hai scoperto…">'+esc(s.note)+'</textarea>'+
+    '<div class="fin">Aggiunto il '+new Date(s.added).toLocaleDateString("it-IT")+'</div>'+
+    '</div>';
+}
+function card(s){
+  var st=statusOf(s), md=mediaPasti(s), ult=ultimoPasto(s), foto=copertina(s);
+  var cls="card st-"+st+(s.rating>=6?" epic":"");
+  var h='<div class="'+cls+'" data-id="'+s.id+'">';
+  h+='<button class="del" data-a="del" data-i="'+s.id+'" title="Rimuovi dall\'elenco">✕</button>';
+  h+='<div class="top">';
+  var iniz=((s.name||"").match(/[A-Za-zÀ-ÿ0-9]/)||["?"])[0].toUpperCase();
+  var ph='<div class="pos ph" style="background:#7a4a2a" title="'+esc(s.cat||"Piatto")+'">'+esc(iniz)+'</div>';
+  h+=foto?'<img class="pos" src="'+esc(foto)+'" alt="" loading="lazy" title="Foto" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+ph.replace('class="pos ph"','class="pos ph" hidden'):ph;
+  h+='<div class="body">';
+  h+='<div class="art">'+esc(s.cat||"categoria non indicata")+'</div>';
+  h+='<div class="ttl">'+esc(s.name)+'</div>';
+  h+='<div class="meta">'+(ult?'ultima volta '+dataIt(ult.d)+(ult.luogo?' · '+esc(ult.luogo):'')+' · ':'')+rateHtml(s.id,s.rating)+
+     (s.pasti.length?' · '+s.pasti.length+(s.pasti.length===1?' volta':' volte'):'')+
+     (md?'<span class="media">media '+md.m.toFixed(1).replace(".",",")+' ('+md.n+')'+
+         (Math.round(md.m)!==Math.min(s.rating,5)||!s.rating?'<button data-a="usamedia" data-i="'+s.id+'" title="Dai al piatto il voto medio dei pasti">usa</button>':'')+'</span>':'')+
+     '</div>';
+  h+='<div class="acts">'+
+     '<button class="btn sm" data-a="mangiato" data-i="'+s.id+'" title="Segna un pasto: dove, quando, con chi">🍽 Mangiato</button>'+
+     '<button class="btn sm" data-a="open" data-i="'+s.id+'">'+(s.openPasti?"▴":"▾")+' Pasti'+(s.pasti.length?' '+s.pasti.length:'')+'</button>'+
+     '<button class="btn sm" data-a="edit" data-i="'+s.id+'">'+(s.openDet?"▴":"▾")+' Dettagli</button>'+
+     '<button class="btn sm" data-a="foto" data-i="'+s.id+'" data-ctx="piatto" title="Foto di copertina del piatto">📷</button>'+
+     '</div>';
+  h+='</div></div>';
+  if(s.note) h+='<div class="note">'+esc(s.note)+'</div>';
+  if(s.openForm) h+=formPastoHtml(s);
+  if(s.openPasti) h+=pastiHtml(s);
+  if(s.openDet) h+=detailHtml(s);
+  return h+'</div>';
+}
+
+/* ---- azioni sulla scheda ---- */
+document.addEventListener("click",function(ev){
+  var b=ev.target.closest("[data-a]"); if(!b) return;
+  var a=b.dataset.a, s=find(b.dataset.i); if(!s) return;
+  if(a==="open"){ s.openPasti=!s.openPasti; render(); return }
+  if(a==="edit"){ s.openDet=!s.openDet; render(); return }
+  if(a==="del"){ removeDish(s); return }
+  if(a==="mangiato"){ s.openForm=!s.openForm; votoNuova[s.id]=0; render(); return }
+  if(a==="annullapasto"){ s.openForm=false; delete pendingImg[s.id]; render(); return }
+  if(a==="rate"){
+    var v=Number(b.dataset.v);
+    if(b.dataset.nuova){ votoNuova[s.id]=(votoNuova[s.id]===v)?0:v; aggiornaStelleForm(s); return }
+    if(b.dataset.p){ var p=s.pasti.filter(function(x){ return x.id===b.dataset.p })[0]; if(p){ p.rating=(p.rating===v)?0:v; tocca(s,true); render() } return }
+    s.rating=(s.rating===v)?0:v; tocca(s,true); render(); return;
+  }
+  if(a==="usamedia"){ var md=mediaPasti(s); if(md){ s.rating=Math.max(1,Math.round(md.m)); tocca(s,true); render() } return }
+  if(a==="foto"){
+    if(!connesso()){ toast("Devi essere collegato"); return }
+    fotoPer={id:s.id, ctx:b.dataset.ctx||"piatto"};
+    var fi=document.getElementById("fFoto"); fi.value=""; fi.click(); return;
+  }
+  if(a==="salvapasto"){
+    var f=document.querySelector('[data-form="'+s.id+'"]'); if(!f) return;
+    var g=function(k){ var el=f.querySelector('[data-bf="'+k+'"]'); return el?el.value.trim():"" };
+    var d=g("d")||oggi(), img=pendingImg[s.id]||"";
+    s.pasti.push({id:uid(), d:d, luogo:g("luogo"), persone:g("persone"), rating:votoNuova[s.id]||0, note:g("note"), img:img});
+    s.pasti.sort(function(x,y){ return y.d.localeCompare(x.d) });
+    if(!s.rating && votoNuova[s.id]) s.rating=votoNuova[s.id];
+    delete pendingImg[s.id];
+    s.openForm=false; s.openPasti=true;
+    tocca(s,true); render();
+    toast("Pasto segnato");
+    return;
+  }
+  if(a==="delpasto"){
+    s.pasti=s.pasti.filter(function(x){ return x.id!==b.dataset.p });
+    tocca(s,true); render(); return;
+  }
+});
+function aggiornaStelleForm(s){
+  var f=document.querySelector('[data-form="'+s.id+'"]'); if(!f) return;
+  var v=votoNuova[s.id]||0, wrap=f.querySelector(".rate");
+  wrap.classList.toggle("epic",v>=6);
+  wrap.querySelectorAll("b").forEach(function(st){ st.classList.toggle("off",Number(st.dataset.v)>v && !(st.classList.contains("plus")&&v>=6)) });
+}
+document.querySelectorAll(".chd").forEach(function(h){
+  var t=h.dataset.t;
+  if(lsGet("cl:"+t)==="1") h.parentNode.classList.add("closed");
+  h.addEventListener("click",function(e){
+    if(e.target.closest("select")) return;
+    var c=h.parentNode.classList.toggle("closed");
+    lsSet("cl:"+t,c?"1":"0");
+  });
+});
+document.addEventListener("change",function(ev){
+  var el=ev.target.closest?ev.target.closest("[data-f]"):null; if(!el) return;
+  var s=find(el.dataset.i); if(!s) return;
+  var f=el.dataset.f, v=el.value.trim();
+  if(f==="name"){ if(v) s.name=v }
+  else s[f]=v;
+  tocca(s,true);
+  clearTimeout(window.__rt); window.__rt=setTimeout(render,150);
+});
+
+/* ---- foto: scattata o scelta dalla galleria, ridotta sul dispositivo e
+   caricata nello spazio Supabase "piatti", in una cartella per utente ---- */
+var fotoPer=null;
+function userId(){
+  try{ var p=JSON.parse(atob(sess.access_token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))); return p.sub||"" }catch(e){ return "" }
+}
+function riduci(file,max){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file), im=new Image();
+    im.onload=function(){
+      var w=im.naturalWidth, h=im.naturalHeight, k=Math.min(1,max/Math.max(w,h));
+      var c=document.createElement("canvas"); c.width=Math.round(w*k); c.height=Math.round(h*k);
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function(b){ b?res(b):rej(new Error("conversione")) },"image/jpeg",.82);
+    };
+    im.onerror=function(){ URL.revokeObjectURL(url); rej(new Error("immagine non leggibile")) };
+    im.src=url;
+  });
+}
+function caricaFoto(blob){
+  var uid_=userId(); if(!uid_) return Promise.reject(new Error("sessione"));
+  var path=uid_+"/"+uid()+"-"+Date.now().toString(36)+".jpg";
+  return fetch(SB_URL+"/storage/v1/object/piatti/"+path,{ method:"POST", body:blob,
+      headers:{ apikey:SB_KEY, Authorization:"Bearer "+sess.access_token, "Content-Type":"image/jpeg", "x-upsert":"true" } })
+    .then(function(r){ if(r.status===401) return refreshSess().then(function(){ return caricaFoto(blob) });
+      if(!r.ok) return r.text().then(function(x){ throw new Error(x.slice(0,120)) });
+      return SB_URL+"/storage/v1/object/public/piatti/"+path;
+    });
+}
+document.getElementById("fFoto").addEventListener("change",function(){
+  var f=this.files[0], s=fotoPer&&find(fotoPer.id); if(!f||!s) return;
+  var ctx=fotoPer.ctx;
+  toast("Carico la foto…");
+  riduci(f,900).then(caricaFoto).then(function(url){
+    if(ctx==="pasto"){ pendingImg[s.id]=url; s.openForm=true; render(); toast("Foto pronta: salvala con il pasto") }
+    else { s.img=url; tocca(s,true); render(); toast("Foto impostata") }
+  }).catch(function(e){ toast("Foto non caricata: "+(/Bucket not found|not found/i.test(e.message)?"spazio 'piatti' non ancora creato su Supabase":e.message)) });
+});
+
+/* ============ aggiunta piatto ============ */
+var ovAdd=document.getElementById("ovAdd");
+function openAdd(){
+  ["aName","aCat","aNote"].forEach(function(id){ document.getElementById(id).value="" });
+  ovAdd.classList.add("on");
+  setTimeout(function(){ document.getElementById("aName").focus() },50);
+}
+function addDish(o){
+  var dup=db.dishes.filter(function(s){ return s.name.toLowerCase()===o.name.toLowerCase() })[0];
+  if(dup){ toast("«"+dup.name+"» è già in lista"); ovAdd.classList.remove("on"); return }
+  var s=migrate({ id:uid(), name:o.name, cat:o.cat, note:o.note, pasti:[], rating:0, added:Date.now(), updated:Date.now() });
+  db.dishes.push(s); tocca(s,true);
+  ovAdd.classList.remove("on");
+  render();
+  toast("«"+s.name+"» aggiunto a Da provare");
+}
+document.getElementById("bAdd").onclick=openAdd;
+document.getElementById("bCancel").onclick=function(){ ovAdd.classList.remove("on") };
+document.getElementById("bSave").onclick=function(){
+  var n=document.getElementById("aName").value.trim();
+  if(!n){ toast("Il nome del piatto è obbligatorio"); return }
+  addDish({ name:n, cat:document.getElementById("aCat").value.trim(), note:document.getElementById("aNote").value.trim() });
+};
+ovAdd.addEventListener("click",function(e){ if(e.target===ovAdd) ovAdd.classList.remove("on") });
+
+function removeDish(s){
+  var i=db.dishes.indexOf(s); if(i<0) return;
+  db.dishes.splice(i,1); elimina(s);
+  render();
+  var t=document.getElementById("toast");
+  t.className="toast on act";
+  t.textContent="«"+s.name+"» rimosso ";
+  var b=document.createElement("button");
+  b.textContent="Annulla";
+  b.onclick=function(){ db.dishes.push(s); tocca(s,true); t.className="toast"; render(); toast("Ripristinato") };
+  t.appendChild(b);
+  clearTimeout(toast._h);
+  toast._h=setTimeout(function(){ t.className="toast" },7000);
+}
+
+/* ============ navigazione mobile ============ */
+document.getElementById("tabBar").addEventListener("click",function(e){
+  var b=e.target.closest("[data-tab]"); if(!b) return;
+  tabAttiva=b.dataset.tab; lsSet("tab",tabAttiva);
+  render(); window.scrollTo(0,0); document.body.classList.remove("giu");
+});
+document.getElementById("bMenu").onclick=function(){ document.querySelector(".tools").classList.toggle("aperta") };
+(function(){
+  window.addEventListener("scroll",function(){
+    var y=window.scrollY||document.documentElement.scrollTop;
+    document.body.classList.toggle("giu", y>24);
+  },{passive:true});
+})();
+
+/* ============ backup ============ */
+document.getElementById("bExp").onclick=function(){
+  var blob=new Blob([JSON.stringify({app:"dishlog",v:1,exported:new Date().toISOString(),dishes:db.dishes})],{type:"application/json"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="dishlog-backup-"+oggi()+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href) },2000);
+  toast("Backup salvato");
+};
+document.getElementById("bImp").onclick=function(){ document.getElementById("fImp").click() };
+document.getElementById("fImp").onchange=function(e){
+  var f=e.target.files[0]; if(!f) return;
+  var fr=new FileReader();
+  fr.onload=function(){
+    try{
+      var d=JSON.parse(fr.result), inc=Array.isArray(d)?d:d.dishes;
+      if(!Array.isArray(inc)) throw 0;
+      var merge=db.dishes.length && confirm("Unire al contenuto attuale?\n\nOK = unisci  ·  Annulla = sostituisci tutto");
+      if(!merge){ db.dishes.slice().forEach(function(s){ elimina(s) }); db.dishes=[] }
+      var n=0;
+      inc.forEach(function(s){
+        if(!s||!s.name) return;
+        if(db.dishes.some(function(x){ return x.name.toLowerCase()===String(s.name).toLowerCase() })) return;
+        var m=migrate(s); db.dishes.push(m); tocca(m,false); n++;
+      });
+      render(); toast(n+" piatti importati");
+    }catch(err){ toast("File non valido") }
+  };
+  fr.readAsText(f);
+  e.target.value="";
+};
+
+/* ===================== account e server =====================
+   Stesso progetto Supabase di tvlog, musiclog, booklog e winelog (stessi utenti).
+   Tabella "foods", spazio foto "piatti". Il server è l'unica copia.
+================================================================ */
+var SB_URL="https://cciycxllvuxjotfqrubw.supabase.co";
+var SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaXljeGxsdnV4am90ZnFydWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4OTI2NTAsImV4cCI6MjEwNzQ2ODY1MH0.rhp8HmRLk2L-D1xdujNQHHf0YwmpSbOOZ4O6o_dmgt8";
+var TAB="/rest/v1/foods";
+var SESS="dishlog-sess";
+var sess=null;
+
+function loadSess(){ try{ sess=JSON.parse(localStorage.getItem(SESS)||"null") }catch(e){ sess=null } }
+function saveSess(){ try{ if(sess) localStorage.setItem(SESS,JSON.stringify(sess)); else localStorage.removeItem(SESS) }catch(e){} }
+function connesso(){ return !!(sess && sess.access_token) }
+
+function sbFetch(path,opt,noRetry){
+  opt=opt||{};
+  var h=opt.headers||{};
+  h["apikey"]=SB_KEY; h["Content-Type"]="application/json";
+  if(connesso()) h["Authorization"]="Bearer "+sess.access_token;
+  opt.headers=h;
+  return fetch(SB_URL+path,opt).then(function(r){
+    if(r.status===401 && connesso() && !noRetry) return refreshSess().then(function(){ return sbFetch(path,opt,true) });
+    return r;
+  });
+}
+function refreshSess(){
+  if(!sess || !sess.refresh_token) return Promise.reject(new Error("sessione scaduta"));
+  return fetch(SB_URL+"/auth/v1/token?grant_type=refresh_token",{
+    method:"POST", headers:{apikey:SB_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify({refresh_token:sess.refresh_token})
+  }).then(function(r){ return r.json() }).then(function(d){
+    if(!d.access_token) throw new Error("sessione scaduta");
+    sess={access_token:d.access_token, refresh_token:d.refresh_token, email:(d.user&&d.user.email)||(sess&&sess.email)||""};
+    saveSess(); return sess;
+  });
+}
+function authCall(path,email,pass){
+  return fetch(SB_URL+path,{ method:"POST", headers:{apikey:SB_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify({email:email,password:pass}) })
+    .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d} }) });
+}
+function erroreAuth(d){
+  var m=(d&&(d.msg||d.error_description||d.message||d.error))||"errore";
+  if(/invalid login/i.test(m)) return "Email o password non validi";
+  if(/already registered|already exists/i.test(m)) return "Account già esistente: usa Accedi";
+  if(/password/i.test(m) && /least|short/i.test(m)) return "Password troppo corta";
+  if(/confirm/i.test(m)) return "Devi confermare l'email prima di accedere";
+  return m;
+}
+function pullRemote(){
+  return sbFetch(TAB+"?select=id,payload&order=updated_at.asc").then(function(r){
+    if(!r.ok) return r.text().then(function(t){ throw new Error("lettura: "+t.slice(0,120)) });
+    return r.json();
+  });
+}
+function ricarica(silenzioso){
+  if(!connesso()) return Promise.reject(new Error("non connesso"));
+  if(coda.length || inVolo) return Promise.resolve();
+  return pullRemote().then(function(righe){
+    var aperte={}; db.dishes.forEach(function(s){ aperte[s.id]={p:s.openPasti,d:s.openDet,f:s.openForm} });
+    db.dishes=righe.filter(function(r){ return r.payload && r.payload.name }).map(function(r){
+      var s=migrate(r.payload), a=aperte[s.id]; if(a){ s.openPasti=a.p; s.openDet=a.d; s.openForm=a.f } return s; });
+    reteKO=false; sess.last=Date.now(); saveSess();
+    render(); accUI();
+  }).catch(function(err){
+    if(!silenzioso) toast("Server non raggiungibile: "+err.message);
+    reteKO=true; avvisoRete(); throw err;
+  });
+}
+var coda=[], daCancellare=[], inVolo=false, reteKO=false;
+function scrivi(s){ if(coda.indexOf(s)<0) coda.push(s); programma() }
+function elimina(s){ var i=coda.indexOf(s); if(i>-1) coda.splice(i,1); daCancellare.push(s.id); programma() }
+function programma(){ clearTimeout(programma._t); programma._t=setTimeout(flush,250); accUI() }
+function inSospeso(){ return coda.length+daCancellare.length+(inVolo?1:0) }
+function pushShows(lista,keepalive){
+  if(!lista.length) return Promise.resolve();
+  var righe=lista.map(function(s){ return { id:s.id, payload:s, updated_at:new Date().toISOString() } });
+  var blocchi=[]; for(var i=0;i<righe.length;i+=80) blocchi.push(righe.slice(i,i+80));
+  return blocchi.reduce(function(p,b){
+    return p.then(function(){
+      return sbFetch(TAB+"?on_conflict=user_id,id",{ method:"POST", keepalive:!!keepalive,
+        headers:{Prefer:"resolution=merge-duplicates,return=minimal"}, body:JSON.stringify(b) })
+      .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error("scrittura: "+t.slice(0,120)) }) });
+    });
+  },Promise.resolve());
+}
+function deleteIds(ids,keepalive){
+  if(!ids.length) return Promise.resolve();
+  return sbFetch(TAB+"?id=in.("+ids.map(encodeURIComponent).join(",")+")",{method:"DELETE",keepalive:!!keepalive,headers:{Prefer:"return=minimal"}})
+    .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error("cancellazione: "+t.slice(0,120)) }) });
+}
+function flush(keepalive){
+  clearTimeout(programma._t);
+  if(!connesso()){ coda=[]; daCancellare=[]; return Promise.resolve() }
+  if(inVolo && !keepalive){ programma(); return Promise.resolve() }
+  if(!coda.length && !daCancellare.length) return Promise.resolve();
+  var serie=coda.slice(), ids=daCancellare.slice();
+  coda=[]; daCancellare=[]; inVolo=true; accUI();
+  return deleteIds(ids,keepalive).then(function(){ return pushShows(serie,keepalive) })
+    .then(function(){
+      inVolo=false; reteKO=false; sess.last=Date.now(); saveSess(); avvisoRete(); accUI();
+      if(coda.length||daCancellare.length) flush();
+    })
+    .catch(function(err){
+      inVolo=false; reteKO=true; avvisoRete(); accUI();
+      toast("Modifica non salvata: "+(/fetch/i.test(err.message)?"sei senza rete":err.message));
+      coda=[]; daCancellare=[];
+      ricarica(true).catch(function(){});
+    });
+}
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="hidden") flush(true);
+  else if(connesso()) ricarica(true).catch(function(){});
+});
+window.addEventListener("pagehide",function(){ flush(true) });
+window.addEventListener("online",function(){ if(connesso()) ricarica(true).catch(function(){}) });
+
+var ovAcc=document.getElementById("ovAcc");
+function accUI(){
+  var on=connesso();
+  document.getElementById("accOff").hidden=on;
+  document.getElementById("accOn").hidden=!on;
+  document.getElementById("bAcc").textContent = on ? "☁ "+(sess.email||"connesso") : "☁ Accedi";
+  if(on){
+    var pend=inSospeso();
+    document.getElementById("accWho").innerHTML=
+      "Connesso come <b>"+esc(sess.email||"")+"</b>. I tuoi piatti stanno sul server: "+
+      "ogni modifica viene scritta subito e la vedi uguale da ogni dispositivo."+
+      (sess.last?"<br>Ultimo contatto con il server: "+new Date(sess.last).toLocaleString("it-IT")+".":"")+
+      (pend?'<br><b style="color:var(--warn)">Scrittura in corso…</b>':
+       reteKO?'<br><b style="color:var(--warn)">Server non raggiungibile: l\'ultima modifica non è stata salvata.</b>':"");
+  }
+}
+document.getElementById("bAcc").onclick=function(){ accUI(); ovAcc.classList.add("on") };
+document.getElementById("bStart").onclick=function(){ accUI(); ovAcc.classList.add("on") };
+document.getElementById("avvisoLoc").onclick=function(){ ricarica().catch(function(){}) };
+document.getElementById("accClose1").onclick=function(){ ovAcc.classList.remove("on") };
+document.getElementById("accClose2").onclick=function(){ ovAcc.classList.remove("on") };
+ovAcc.addEventListener("click",function(e){ if(e.target===ovAcc) ovAcc.classList.remove("on") });
+function entra(path,etichetta){
+  var e=document.getElementById("accMail").value.trim(), p=document.getElementById("accPass").value;
+  if(!e||!p){ toast("Email e password sono obbligatorie"); return }
+  toast(etichetta+"…");
+  authCall(path,e,p).then(function(r){
+    if(!r.ok || !r.d.access_token){
+      if(r.ok && path.indexOf("signup")>-1 && !r.d.access_token){ toast("Account creato: conferma l'email, poi accedi"); return }
+      toast(erroreAuth(r.d)); return;
+    }
+    sess={access_token:r.d.access_token, refresh_token:r.d.refresh_token, email:(r.d.user&&r.d.user.email)||e, last:0};
+    saveSess(); accUI();
+    document.getElementById("accPass").value="";
+    ovAcc.classList.remove("on");
+    avvio();
+  }).catch(function(){ toast("Server non raggiungibile") });
+}
+document.getElementById("bLogin").onclick=function(){ entra("/auth/v1/token?grant_type=password","Accesso") };
+document.getElementById("bReg").onclick=function(){ entra("/auth/v1/signup","Creazione account") };
+document.getElementById("bWipe").onclick=function(){
+  if(!connesso()) return;
+  if(!confirm("Cancellare tutti i piatti del tuo account?\n\nNon esiste un'altra copia: se vuoi conservarli, fai prima un backup.")) return;
+  var b=this; b.textContent="Cancellazione…";
+  sbFetch(TAB+"?id=not.is.null",{method:"DELETE",headers:{Prefer:"return=minimal"}})
+    .then(function(r){
+      b.textContent="Elimina tutti i miei piatti";
+      if(!r.ok) throw new Error("rifiutata");
+      coda=[]; daCancellare=[]; db.dishes=[]; render();
+      document.getElementById("accLog").innerHTML='<div class="res"><div class="empty" style="text-align:left">Tutto cancellato. L\'account resta: puoi ripartire da zero o ripristinare un backup.</div></div>';
+      toast("Piatti cancellati");
+    })
+    .catch(function(){ b.textContent="Elimina tutti i miei piatti"; toast("Cancellazione non riuscita") });
+};
+document.getElementById("bLogout").onclick=function(){
+  flush().then(function(){ sess=null; saveSess(); db.dishes=[]; accUI(); ovAcc.classList.remove("on"); render(); toast("Uscito") });
+};
+document.getElementById("bSync").onclick=function(){
+  var b=this, t=b.textContent; b.textContent="⟳ in corso…";
+  ricarica().then(function(){
+    b.textContent=t;
+    document.getElementById("accLog").innerHTML='<div class="empty" style="text-align:left">Riletto dal server: '+db.dishes.length+' piatti.</div>';
+    toast("Aggiornato");
+  }).catch(function(err){
+    b.textContent=t;
+    document.getElementById("accLog").innerHTML='<div class="empty" style="text-align:left">Non riuscita: '+esc(err.message)+'</div>';
+  });
+};
+
+(function(){
+  var ind="info@dishlog.it";
+  Array.prototype.forEach.call(document.querySelectorAll(".posta"),function(el){
+    var a=document.createElement("a"); a.href="mailto:"+ind; a.textContent=ind; a.style.color="inherit"; el.appendChild(a);
+  });
+})();
+
+/* ============ avvio ============ */
+document.getElementById("q").addEventListener("input",render);
+document.addEventListener("change",function(e){
+  var el=e.target.closest?e.target.closest("select.ordcol"):null; if(!el) return;
+  ordine[el.dataset.col]=el.value; lsSet("ord",JSON.stringify(ordine)); render();
+});
+document.getElementById("fvoto").addEventListener("change",render);
+document.addEventListener("keydown",function(e){ if(e.key==="Escape"){ ovAdd.classList.remove("on"); ovAcc.classList.remove("on") } });
+loadSess();
+tabAttiva=COLS.indexOf(lsGet("tab"))>-1?lsGet("tab"):tabAttiva;
+try{
+  var valid=ORDINI.map(function(o){ return o[0] });
+  var perCol=JSON.parse(lsGet("ord")||"null");
+  if(perCol) COLS.forEach(function(t){ if(valid.indexOf(perCol[t])>-1) ordine[t]=perCol[t] });
+}catch(e){}
+function avvio(){
+  render(); accUI();
+  if(!connesso()) return;
+  COLS.forEach(function(t){ document.getElementById("c-"+t).querySelector(".clist").innerHTML='<div class="empty">Lettura dal server…</div>' });
+  ricarica().catch(function(){
+    COLS.forEach(function(t){ document.getElementById("c-"+t).querySelector(".clist").innerHTML=
+      '<div class="empty">Server non raggiungibile.<br>Controlla la connessione e premi ⚠ in alto per riprovare.</div>' });
+  });
+}
+avvio();
+})();
+</script>
+</body>
+</html>
